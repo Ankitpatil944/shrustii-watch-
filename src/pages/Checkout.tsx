@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
+import { StripePaymentForm } from '@/components/StripePaymentForm';
 import { Footer } from '@/components/Footer';
 
 export default function Checkout() {
@@ -61,14 +62,51 @@ export default function Checkout() {
     setCurrentStep(3);
   };
 
-  const handleOrderComplete = async () => {
+  const handlePaymentSuccess = async (paymentIntent: any) => {
     setIsProcessing(true);
     
-    // Simulate order processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setOrderComplete(true);
-    cartDispatch({ type: 'CLEAR_CART' });
+    try {
+      // Create order in backend
+      const orderResponse = await fetch('http://localhost:5000/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+        },
+        body: JSON.stringify({
+          shippingAddress: shippingInfo,
+          billingAddress: {
+            firstName: paymentInfo.cardName.split(' ')[0] || '',
+            lastName: paymentInfo.cardName.split(' ')[1] || '',
+            address: paymentInfo.billingAddress,
+            city: paymentInfo.billingCity,
+            state: paymentInfo.billingState,
+            zipCode: paymentInfo.billingZip,
+            country: 'USA',
+          },
+          paymentMethod: 'stripe',
+          paymentId: paymentIntent.id,
+          notes: orderNotes,
+        }),
+      });
+
+      if (orderResponse.ok) {
+        setOrderComplete(true);
+        cartDispatch({ type: 'CLEAR_CART' });
+      } else {
+        throw new Error('Failed to create order');
+      }
+    } catch (error) {
+      console.error('Order creation failed:', error);
+      alert('Payment succeeded but order creation failed. Please contact support.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePaymentError = (error: any) => {
+    console.error('Payment failed:', error);
+    alert(`Payment failed: ${error.message}`);
     setIsProcessing(false);
   };
 
@@ -426,100 +464,24 @@ export default function Checkout() {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <form onSubmit={handlePaymentSubmit} className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-semibold text-luxury-noir mb-2">
-                            Card Number *
-                          </label>
-                          <Input
-                            value={paymentInfo.cardNumber}
-                            onChange={(e) => setPaymentInfo(prev => ({ ...prev, cardNumber: e.target.value }))}
-                            placeholder="1234 5678 9012 3456"
-                            required
-                            className="border-luxury-gold/20 focus:border-luxury-gold"
-                          />
-                        </div>
-
-                        <div className="grid md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-sm font-semibold text-luxury-noir mb-2">
-                              Expiry Date *
-                            </label>
-                            <Input
-                              value={paymentInfo.expiryDate}
-                              onChange={(e) => setPaymentInfo(prev => ({ ...prev, expiryDate: e.target.value }))}
-                              placeholder="MM/YY"
-                              required
-                              className="border-luxury-gold/20 focus:border-luxury-gold"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-semibold text-luxury-noir mb-2">
-                              CVV *
-                            </label>
-                            <Input
-                              value={paymentInfo.cvv}
-                              onChange={(e) => setPaymentInfo(prev => ({ ...prev, cvv: e.target.value }))}
-                              placeholder="123"
-                              required
-                              className="border-luxury-gold/20 focus:border-luxury-gold"
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-semibold text-luxury-noir mb-2">
-                            Cardholder Name *
-                          </label>
-                          <Input
-                            value={paymentInfo.cardName}
-                            onChange={(e) => setPaymentInfo(prev => ({ ...prev, cardName: e.target.value }))}
-                            required
-                            className="border-luxury-gold/20 focus:border-luxury-gold"
-                          />
-                        </div>
-
-                        <div className="space-y-4">
-                          <h4 className="font-semibold text-luxury-noir">Billing Address</h4>
-                          <div className="grid md:grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-semibold text-luxury-noir mb-2">
-                                Address
-                              </label>
-                              <Input
-                                value={paymentInfo.billingAddress}
-                                onChange={(e) => setPaymentInfo(prev => ({ ...prev, billingAddress: e.target.value }))}
-                                className="border-luxury-gold/20 focus:border-luxury-gold"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-sm font-semibold text-luxury-noir mb-2">
-                                City
-                              </label>
-                              <Input
-                                value={paymentInfo.billingCity}
-                                onChange={(e) => setPaymentInfo(prev => ({ ...prev, billingCity: e.target.value }))}
-                                className="border-luxury-gold/20 focus:border-luxury-gold"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-4">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="lg"
-                            onClick={() => setCurrentStep(1)}
-                            className="flex-1"
-                          >
-                            Back to Shipping
-                          </Button>
-                          <Button type="submit" variant="luxury" size="lg" className="flex-1">
-                            Review Order
-                          </Button>
-                        </div>
-                      </form>
+                      <StripePaymentForm
+                        amount={cartState.total}
+                        onPaymentSuccess={handlePaymentSuccess}
+                        onPaymentError={handlePaymentError}
+                        isProcessing={isProcessing}
+                      />
+                      
+                      <div className="flex gap-4 mt-6">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="lg"
+                          onClick={() => setCurrentStep(1)}
+                          className="flex-1"
+                        >
+                          Back to Shipping
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </motion.div>

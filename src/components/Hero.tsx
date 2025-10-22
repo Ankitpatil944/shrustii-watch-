@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import heroBg from '@/assets/hero-bg.jpg';
 
 interface HeroProps {
@@ -10,6 +11,7 @@ interface HeroProps {
 
 export const Hero = ({ onShowLogin }: HeroProps) => {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden">
@@ -49,7 +51,7 @@ export const Hero = ({ onShowLogin }: HeroProps) => {
           transition={{ duration: 1, delay: 0.8 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Button variant="luxury" size="xl">
+          <Button variant="luxury" size="xl" onClick={() => navigate('/collections')}>
             Explore Collection
           </Button>
           {!isAuthenticated && onShowLogin ? (
@@ -57,7 +59,7 @@ export const Hero = ({ onShowLogin }: HeroProps) => {
               Sign In
             </Button>
           ) : (
-            <Button variant="luxury-outline" size="xl">
+            <Button variant="luxury-outline" size="xl" onClick={() => navigate('/contact')}>
               Book Consultation
             </Button>
           )}

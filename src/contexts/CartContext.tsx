@@ -1,5 +1,44 @@
 import { createContext, useContext, useReducer, ReactNode } from 'react';
 
+// Function to sync cart with backend (non-blocking)
+const syncCartWithBackend = (items: CartItem[]) => {
+  // Run sync in background without blocking UI
+  setTimeout(async () => {
+    try {
+      const token = localStorage.getItem('auth_token');
+      if (!token) return;
+
+      // Clear existing cart items
+      await fetch('http://localhost:5000/api/cart/clear', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      // Add each item to backend cart
+      for (const item of items) {
+        await fetch('http://localhost:5000/api/cart/add', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            productId: item.id,
+            quantity: item.quantity,
+            size: item.size,
+            strap: item.strap,
+            customization: item.customization,
+          }),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to sync cart with backend:', error);
+    }
+  }, 0);
+};
+
 export interface CartItem {
   id: number;
   name: string;
@@ -66,6 +105,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 
       const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
 
+      // Sync with backend
+      syncCartWithBackend(newItems);
+
       return {
         ...state,
         items: newItems,
@@ -82,6 +124,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         return sum + (itemPrice * item.quantity);
       }, 0);
       const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
+
+      // Sync with backend
+      syncCartWithBackend(newItems);
 
       return {
         ...state,
@@ -104,6 +149,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
       }, 0);
       const itemCount = newItems.reduce((sum, item) => sum + item.quantity, 0);
 
+      // Sync with backend
+      syncCartWithBackend(newItems);
+
       return {
         ...state,
         items: newItems,
@@ -113,6 +161,9 @@ function cartReducer(state: CartState, action: CartAction): CartState {
     }
 
     case 'CLEAR_CART':
+      // Sync with backend
+      syncCartWithBackend([]);
+      
       return {
         ...state,
         items: [],

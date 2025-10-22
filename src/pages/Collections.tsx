@@ -1,13 +1,101 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { Filter, Grid, List, Star, Heart, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCart } from '@/contexts/CartContext';
 import { Footer } from '@/components/Footer';
+import { QuickViewModal } from '@/components/QuickViewModal';
 import watchHero from '@/assets/watch-hero.jpg';
+
+// Move static data outside component to prevent recreation on every render
+const categories = [
+  { id: 'all', name: 'All Collections', count: 24 },
+  { id: 'classic', name: 'Classic', count: 8 },
+  { id: 'heritage', name: 'Heritage', count: 6 },
+  { id: 'limited', name: 'Limited Edition', count: 4 },
+  { id: 'bespoke', name: 'Bespoke', count: 6 }
+];
+
+const products = [
+  {
+    id: 1,
+    name: "Élégance Noir",
+    category: "Classic",
+    price: 12500,
+    originalPrice: 15000,
+    rating: 4.9,
+    reviews: 127,
+    image: watchHero,
+    isNew: true,
+    isLimited: false,
+    description: "A timeless classic featuring a sleek black dial with gold accents and Swiss automatic movement."
+  },
+  {
+    id: 2,
+    name: "Prestige Gold",
+    category: "Heritage",
+    price: 18900,
+    originalPrice: null,
+    rating: 4.8,
+    reviews: 89,
+    image: watchHero,
+    isNew: false,
+    isLimited: true,
+    description: "Heritage collection piece with 18k gold case and hand-engraved complications."
+  },
+  {
+    id: 3,
+    name: "Royal Chronograph",
+    category: "Limited Edition",
+    price: 24000,
+    originalPrice: 28000,
+    rating: 5.0,
+    reviews: 45,
+    image: watchHero,
+    isNew: false,
+    isLimited: true,
+    description: "Limited edition chronograph with tourbillon movement and diamond-set bezel."
+  },
+  {
+    id: 4,
+    name: "Minimalist Silver",
+    category: "Classic",
+    price: 8500,
+    originalPrice: null,
+    rating: 4.7,
+    reviews: 203,
+    image: watchHero,
+    isNew: true,
+    isLimited: false,
+    description: "Clean, minimalist design with silver case and white dial for everyday elegance."
+  },
+  {
+    id: 5,
+    name: "Vintage Rose Gold",
+    category: "Heritage",
+    price: 16500,
+    originalPrice: 19000,
+    rating: 4.9,
+    reviews: 156,
+    image: watchHero,
+    isNew: false,
+    isLimited: false,
+    description: "Vintage-inspired design with rose gold case and cream dial with blue hands."
+  },
+  {
+    id: 6,
+    name: "Carbon Fiber Sport",
+    category: "Limited Edition",
+    price: 32000,
+    originalPrice: null,
+    rating: 4.8,
+    reviews: 67,
+    image: watchHero,
+    isNew: false,
+    isLimited: true,
+    description: "High-tech carbon fiber case with titanium movement for the modern collector."
+  }
+];
 
 export default function Collections() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -15,113 +103,25 @@ export default function Collections() {
   const [priceRange, setPriceRange] = useState([0, 50000]);
   const [sortBy, setSortBy] = useState('featured');
   const [addingToCart, setAddingToCart] = useState<number | null>(null);
+  const [quickViewProduct, setQuickViewProduct] = useState<typeof products[0] | null>(null);
+  const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
 
   const { dispatch: cartDispatch } = useCart();
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-100px" });
 
-  const categories = [
-    { id: 'all', name: 'All Collections', count: 24 },
-    { id: 'classic', name: 'Classic', count: 8 },
-    { id: 'heritage', name: 'Heritage', count: 6 },
-    { id: 'limited', name: 'Limited Edition', count: 4 },
-    { id: 'bespoke', name: 'Bespoke', count: 6 }
-  ];
-
-  const products = [
-    {
-      id: 1,
-      name: "Élégance Noir",
-      category: "Classic",
-      price: 12500,
-      originalPrice: 15000,
-      rating: 4.9,
-      reviews: 127,
-      image: watchHero,
-      isNew: true,
-      isLimited: false,
-      description: "A timeless classic featuring a sleek black dial with gold accents and Swiss automatic movement."
-    },
-    {
-      id: 2,
-      name: "Prestige Gold",
-      category: "Heritage",
-      price: 18900,
-      originalPrice: null,
-      rating: 4.8,
-      reviews: 89,
-      image: watchHero,
-      isNew: false,
-      isLimited: true,
-      description: "Heritage collection piece with 18k gold case and hand-engraved complications."
-    },
-    {
-      id: 3,
-      name: "Royal Chronograph",
-      category: "Limited Edition",
-      price: 24000,
-      originalPrice: 28000,
-      rating: 5.0,
-      reviews: 45,
-      image: watchHero,
-      isNew: false,
-      isLimited: true,
-      description: "Limited edition chronograph with tourbillon movement and diamond-set bezel."
-    },
-    {
-      id: 4,
-      name: "Minimalist Silver",
-      category: "Classic",
-      price: 8500,
-      originalPrice: null,
-      rating: 4.7,
-      reviews: 203,
-      image: watchHero,
-      isNew: true,
-      isLimited: false,
-      description: "Clean, minimalist design with silver case and white dial for everyday elegance."
-    },
-    {
-      id: 5,
-      name: "Vintage Rose Gold",
-      category: "Heritage",
-      price: 16500,
-      originalPrice: 19000,
-      rating: 4.9,
-      reviews: 156,
-      image: watchHero,
-      isNew: false,
-      isLimited: false,
-      description: "Vintage-inspired design with rose gold case and cream dial with blue hands."
-    },
-    {
-      id: 6,
-      name: "Carbon Fiber Sport",
-      category: "Limited Edition",
-      price: 32000,
-      originalPrice: null,
-      rating: 4.8,
-      reviews: 67,
-      image: watchHero,
-      isNew: false,
-      isLimited: true,
-      description: "High-tech carbon fiber case with titanium movement for the modern collector."
-    }
-  ];
-
-  const filteredProducts = products.filter(product => {
-    if (selectedCategory !== 'all' && product.category.toLowerCase() !== selectedCategory) {
-      return false;
-    }
-    return product.price >= priceRange[0] && product.price <= priceRange[1];
-  });
+  // Memoize filtered products to prevent recalculation on every render
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      if (selectedCategory !== 'all' && product.category.toLowerCase() !== selectedCategory) {
+        return false;
+      }
+      return product.price >= priceRange[0] && product.price <= priceRange[1];
+    });
+  }, [selectedCategory, priceRange]);
 
   const handleAddToCart = async (product: typeof products[0]) => {
     setAddingToCart(product.id);
     
-    // Simulate adding to cart
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+    // Add to cart immediately for better UX
     cartDispatch({
       type: 'ADD_ITEM',
       payload: {
@@ -133,7 +133,20 @@ export default function Collections() {
       },
     });
     
-    setAddingToCart(null);
+    // Brief delay for visual feedback
+    setTimeout(() => {
+      setAddingToCart(null);
+    }, 300);
+  };
+
+  const handleQuickView = (product: typeof products[0]) => {
+    setQuickViewProduct(product);
+    setIsQuickViewOpen(true);
+  };
+
+  const handleCloseQuickView = () => {
+    setIsQuickViewOpen(false);
+    setQuickViewProduct(null);
   };
 
   return (
@@ -141,29 +154,23 @@ export default function Collections() {
       {/* Hero Section */}
       <section className="relative h-[50vh] flex items-center justify-center overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${watchHero})` }}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ 
+            backgroundImage: `url(${watchHero})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-luxury-noir/80 via-luxury-noir/60 to-luxury-noir/90" />
         </div>
         
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1 }}
-            className="text-5xl md:text-7xl font-serif text-luxury-white mb-6"
-          >
+          <h1 className="text-5xl md:text-7xl font-serif text-luxury-white mb-6">
             Our <span className="luxury-text-gradient">Collections</span>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.3 }}
-            className="text-xl text-luxury-cream max-w-2xl mx-auto"
-          >
+          </h1>
+          <p className="text-xl text-luxury-cream max-w-2xl mx-auto">
             Discover our curated selection of timepieces, each representing the pinnacle of Swiss craftsmanship.
-          </motion.p>
+          </p>
         </div>
       </section>
 
@@ -230,12 +237,8 @@ export default function Collections() {
               : 'grid-cols-1 max-w-4xl mx-auto'
           }`}>
             {filteredProducts.map((product, index) => (
-              <motion.div
+              <div
                 key={product.id}
-                ref={ref}
-                initial={{ opacity: 0, y: 40 }}
-                animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
                 className={`group cursor-pointer ${
                   viewMode === 'list' ? 'flex gap-6' : ''
                 }`}
@@ -319,12 +322,16 @@ export default function Collections() {
                     >
                       {addingToCart === product.id ? 'Adding...' : 'Add to Cart'}
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleQuickView(product)}
+                    >
                       Quick View
                     </Button>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
 
@@ -338,6 +345,13 @@ export default function Collections() {
       </section>
 
       <Footer />
+
+      {/* Quick View Modal */}
+      <QuickViewModal
+        product={quickViewProduct}
+        isOpen={isQuickViewOpen}
+        onClose={handleCloseQuickView}
+      />
     </div>
   );
 }

@@ -1,12 +1,14 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, MapPin } from 'lucide-react';
 
 export const Consultation = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const navigate = useNavigate();
 
   const features = [
     {
@@ -75,7 +77,7 @@ export const Consultation = () => {
           transition={{ duration: 0.8, delay: 0.5 }}
           className="text-center"
         >
-          <Button variant="luxury" size="xl" className="shadow-[var(--shadow-gold)]">
+          <Button variant="luxury" size="xl" className="shadow-[var(--shadow-gold)]" onClick={() => navigate('/contact')}>
             Schedule Consultation
           </Button>
           <p className="text-luxury-cream/70 text-sm mt-4">

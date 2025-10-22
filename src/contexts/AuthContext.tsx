@@ -51,16 +51,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const token = localStorage.getItem('auth_token');
         if (token) {
-          // In a real app, you'd validate the token with your backend
-          const userData = localStorage.getItem('user_data');
-          if (userData) {
-            setState({
-              user: JSON.parse(userData),
-              isAuthenticated: true,
-              isLoading: false,
-            });
+          // Validate token with backend
+          const response = await fetch('http://localhost:5000/api/auth/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data.user) {
+              const user: User = {
+                id: data.data.user.id,
+                email: data.data.user.email,
+                firstName: data.data.user.firstName,
+                lastName: data.data.user.lastName,
+                phone: data.data.user.phone || '',
+                address: data.data.user.address || {},
+              };
+
+              setState({
+                user,
+                isAuthenticated: true,
+                isLoading: false,
+              });
+            } else {
+              localStorage.removeItem('auth_token');
+              localStorage.removeItem('user_data');
+              setState(prev => ({ ...prev, isLoading: false }));
+            }
           } else {
             localStorage.removeItem('auth_token');
+            localStorage.removeItem('user_data');
             setState(prev => ({ ...prev, isLoading: false }));
           }
         } else {
@@ -68,6 +90,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } catch (error) {
         console.error('Auth check failed:', error);
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_data');
         setState(prev => ({ ...prev, isLoading: false }));
       }
     };
@@ -79,27 +103,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock authentication - in real app, call your API
-      if (email === 'demo@lumiere.com' && password === 'demo123') {
+      // Call your backend API
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data.user) {
         const user: User = {
-          id: '1',
-          email,
-          firstName: 'John',
-          lastName: 'Doe',
-          phone: '+1 555 123 4567',
-          address: {
-            street: '123 Luxury Lane',
-            city: 'New York',
-            state: 'NY',
-            zipCode: '10001',
-            country: 'USA',
-          },
+          id: data.data.user.id,
+          email: data.data.user.email,
+          firstName: data.data.user.firstName,
+          lastName: data.data.user.lastName,
+          phone: data.data.user.phone || '',
+          address: data.data.user.address || {},
         };
 
-        const token = 'mock_jwt_token_' + Date.now();
+        const token = data.data.token;
         
         localStorage.setItem('auth_token', token);
         localStorage.setItem('user_data', JSON.stringify(user));
@@ -126,30 +151,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setState(prev => ({ ...prev, isLoading: true }));
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock registration - in real app, call your API
-      const user: User = {
-        id: Date.now().toString(),
-        email: userData.email,
-        firstName: userData.firstName,
-        lastName: userData.lastName,
-        phone: userData.phone,
-      };
-
-      const token = 'mock_jwt_token_' + Date.now();
-      
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('user_data', JSON.stringify(user));
-      
-      setState({
-        user,
-        isAuthenticated: true,
-        isLoading: false,
+      // Call your backend API
+      const response = await fetch('http://localhost:5000/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userData.email,
+          password: userData.password,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          phone: userData.phone,
+        }),
       });
-      
-      return true;
+
+      const data = await response.json();
+
+      if (data.success && data.data.user) {
+        const user: User = {
+          id: data.data.user.id,
+          email: data.data.user.email,
+          firstName: data.data.user.firstName,
+          lastName: data.data.user.lastName,
+          phone: data.data.user.phone || '',
+          address: data.data.user.address || {},
+        };
+
+        const token = data.data.token;
+        
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('user_data', JSON.stringify(user));
+        
+        setState({
+          user,
+          isAuthenticated: true,
+          isLoading: false,
+        });
+        
+        return true;
+      } else {
+        setState(prev => ({ ...prev, isLoading: false }));
+        return false;
+      }
     } catch (error) {
       console.error('Registration failed:', error);
       setState(prev => ({ ...prev, isLoading: false }));

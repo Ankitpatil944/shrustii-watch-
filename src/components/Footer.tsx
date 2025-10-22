@@ -1,4 +1,5 @@
 import { Instagram, Facebook, Twitter } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export const Footer = () => {
   return (
@@ -17,10 +18,10 @@ export const Footer = () => {
               Collections
             </h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-luxury-gold transition-colors">Classic</a></li>
-              <li><a href="#" className="hover:text-luxury-gold transition-colors">Heritage</a></li>
-              <li><a href="#" className="hover:text-luxury-gold transition-colors">Limited Edition</a></li>
-              <li><a href="#" className="hover:text-luxury-gold transition-colors">Bespoke</a></li>
+              <li><Link to="/collections" className="hover:text-luxury-gold transition-colors">All Collections</Link></li>
+              <li><Link to="/collections?category=classic" className="hover:text-luxury-gold transition-colors">Classic</Link></li>
+              <li><Link to="/collections?category=heritage" className="hover:text-luxury-gold transition-colors">Heritage</Link></li>
+              <li><Link to="/collections?category=limited" className="hover:text-luxury-gold transition-colors">Limited Edition</Link></li>
             </ul>
           </div>
 
@@ -29,10 +30,10 @@ export const Footer = () => {
               Service
             </h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-luxury-gold transition-colors">Consultation</a></li>
-              <li><a href="#" className="hover:text-luxury-gold transition-colors">Maintenance</a></li>
-              <li><a href="#" className="hover:text-luxury-gold transition-colors">Authentication</a></li>
-              <li><a href="#" className="hover:text-luxury-gold transition-colors">Warranty</a></li>
+              <li><Link to="/contact" className="hover:text-luxury-gold transition-colors">Consultation</Link></li>
+              <li><Link to="/services" className="hover:text-luxury-gold transition-colors">Maintenance</Link></li>
+              <li><Link to="/services" className="hover:text-luxury-gold transition-colors">Authentication</Link></li>
+              <li><Link to="/services" className="hover:text-luxury-gold transition-colors">Warranty</Link></li>
             </ul>
           </div>
 

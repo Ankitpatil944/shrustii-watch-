@@ -1,26 +1,31 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import watchHero from '@/assets/watch-hero.jpg';
 
 export const ProductGallery = () => {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
+  const navigate = useNavigate();
 
   const products = [
     {
+      id: 1,
       name: "Élégance Noir",
       category: "Classic Collection",
       price: "$12,500",
       image: watchHero,
     },
     {
+      id: 2,
       name: "Prestige Gold",
       category: "Heritage Series",
       price: "$18,900",
       image: watchHero,
     },
     {
+      id: 3,
       name: "Royal Chronograph",
       category: "Limited Edition",
       price: "$24,000",
@@ -49,11 +54,12 @@ export const ProductGallery = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           {products.map((product, index) => (
             <motion.div
-              key={product.name}
+              key={product.id}
               initial={{ opacity: 0, y: 40 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: index * 0.2 }}
               className="group cursor-pointer"
+              onClick={() => navigate(`/product/${product.id}`)}
             >
               <div className="relative overflow-hidden rounded-lg mb-6 bg-luxury-cream shadow-[var(--shadow-soft)] hover:shadow-[var(--shadow-luxury)] transition-all duration-500">
                 <div className="aspect-square relative">
